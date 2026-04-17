@@ -12,6 +12,7 @@ env/
 
 # Reports/Temp
 *.md
+!README.md
 *.pdf
 scratch/
 
