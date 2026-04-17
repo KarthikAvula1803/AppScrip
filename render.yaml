@@ -1,0 +1,27 @@
+services:
+  # 1. FastAPI Backend
+  - type: web
+    name: market-analysis-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # Set this in Render dashboard
+      - key: API_KEY
+        value: mysecureapikey123
+
+  # 2. Streamlit Dashboard
+  - type: web
+    name: market-analysis-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0
+    envVars:
+      - key: BACKEND_URL
+        fromService:
+          name: market-analysis-api
+          type: web
+          property: host
+      - key: API_KEY
+        value: mysecureapikey123
