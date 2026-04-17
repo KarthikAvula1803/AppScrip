@@ -8,7 +8,13 @@ from app.utils.pdf_generator import generate_pdf
 load_dotenv()
 
 # Configuration
-API_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000/api/v1")
+BACKEND_BASE = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+# Ensure the URL points to the v1 API
+if "/api/v1" not in BACKEND_BASE:
+    API_URL = f"{BACKEND_BASE.rstrip('/')}/api/v1"
+else:
+    API_URL = BACKEND_BASE
+    
 API_KEY = os.getenv("API_KEY", "mysecureapikey123")
 
 # Page Config
