@@ -46,7 +46,17 @@ st.info("Using real-time AI + Indian market news data")
 
 with st.sidebar:
     st.header("Settings")
-    st.write("API Status: **Online**" if requests.get(f"{API_URL}/health").status_code == 200 else "API Status: **Offline**")
+    # Robust Health Check
+    api_status = "Offline"
+    status_color = "red"
+    try:
+        if requests.get(f"{API_URL}/health", timeout=2).status_code == 200:
+            api_status = "Online"
+            status_color = "green"
+    except Exception:
+        pass
+    
+    st.markdown(f"API Status: <span style='color:{status_color}; font-weight:bold;'>{api_status}</span>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### How it works")
     st.write("1. Enter an Indian market sector.")
