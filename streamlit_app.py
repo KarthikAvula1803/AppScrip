@@ -46,17 +46,32 @@ st.info("Using real-time AI + Indian market news data")
 
 with st.sidebar:
     st.header("Settings")
-    # Robust Health Check
-    api_status = "Offline"
-    status_color = "red"
+    # Robust Health Check with Auto-Wake logic
+    api_status = "Offline (Sleep Mode)"
+    status_color = "#ff4b4b"
+    
     try:
+        # Quick check first
         if requests.get(f"{API_URL}/health", timeout=2).status_code == 200:
             api_status = "Online"
-            status_color = "green"
+            status_color = "#28a745"
     except Exception:
         pass
     
     st.markdown(f"API Status: <span style='color:{status_color}; font-weight:bold;'>{api_status}</span>", unsafe_allow_html=True)
+    
+    if api_status != "Online":
+        st.warning("⚠️ Backend is sleeping (Render Free Tier).")
+        if st.button("🚀 Wake Up API"):
+            with st.spinner("Waking up server... (can take 30-60s)"):
+                try:
+                    # Long timeout for spin-up
+                    requests.get(f"{API_URL}/health", timeout=60)
+                    st.success("API Waked Up!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to wake: {e}")
+    
     st.markdown("---")
     st.markdown("### How it works")
     st.write("1. Enter an Indian market sector.")

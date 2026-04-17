@@ -27,6 +27,20 @@ The service follows a modular, clean architecture:
     - `formatter`: Converts data into structured Markdown.
 3.  **Utility Layer**: Handles PDF generation (`fpdf2`), caching, and business logic.
 
+## 🚀 Keeping the API Online (Render Free Tier)
+
+Render's free tier puts your service to sleep after 15 minutes of inactivity. To keep it **Online** 24/7:
+
+1.  **Use a Cron Job Service**:
+    *   Sign up for [cron-job.org](https://cron-job.org/) (Free) or [UptimeRobot](https://uptimerobot.com/).
+    *   Create a new cron job that pings your API health endpoint: `https://your-api-name.onrender.com/health`
+    *   Set the interval to **every 10 minutes**.
+    *   This will prevent the service from "spinning down".
+
+2.  **Frontend "Wake Up"**:
+    *   The Streamlit dashboard now includes a **🚀 Wake Up API** button. 
+    *   If the API is offline, click the button to trigger a spin-up (takes ~45 seconds).
+
 ---
 
 ## 🛠️ Setup Instructions
