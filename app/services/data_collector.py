@@ -133,49 +133,41 @@ async def _fetch_from_google_news_rss(sector: str) -> List[Dict[str, Any]]:
 async def fetch_sector_data(sector: str) -> List[Dict[str, Any]]:
     """
     Public function consumed by the /analyze/{sector} endpoint.
-
-    1. Tries DuckDuckGo HTML scraping first.
-    2. Falls back to Google News RSS if DDGo returns nothing.
-    3. Returns a static fallback message on total failure.
-
-    Args:
-        sector: Sanitized, lowercase sector name (e.g. "pharma").
-
-    Returns:
-        List of dicts: [{"title": str, "link": str}, ...]
-        Max 10 entries, deduplicated.
+    Combines results from DuckDuckGo and Google News RSS.
     """
-    results: List[Dict[str, Any]] = []
+    all_results = []
 
     # --- Attempt 1: DuckDuckGo ---
     try:
-        results = await _fetch_from_duckduckgo(sector)
-    except (httpx.TimeoutException, httpx.ConnectError) as exc:
-        logger.warning(f"[DuckDuckGo] Network error: {exc}")
+        ddg_results = await _fetch_from_duckduckgo(sector)
+        if ddg_results:
+            all_results.extend(ddg_results)
     except Exception as exc:
-        logger.error(f"[DuckDuckGo] Unexpected error: {exc}", exc_info=True)
+        logger.error(f"[DuckDuckGo] Error: {exc}")
 
-    # --- Attempt 2: Google News RSS fallback ---
-    if not results:
-        logger.info(f"[Fallback] Switching to Google News RSS for '{sector}'")
-        try:
-            results = await _fetch_from_google_news_rss(sector)
-        except (httpx.TimeoutException, httpx.ConnectError) as exc:
-            logger.warning(f"[GoogleRSS] Network error: {exc}")
-        except Exception as exc:
-            logger.error(f"[GoogleRSS] Unexpected error: {exc}", exc_info=True)
+    # --- Attempt 2: Google News RSS (Always try for better coverage) ---
+    try:
+        gn_results = await _fetch_from_google_news_rss(sector)
+        if gn_results:
+            # Avoid exact duplicates
+            existing_links = {item['link'] for item in all_results}
+            for item in gn_results:
+                if item['link'] not in existing_links:
+                    all_results.append(item)
+    except Exception as exc:
+        logger.error(f"[GoogleRSS] Error: {exc}")
 
-    # --- Static fallback ---
-    if not results:
+    # --- Fallback if both fail ---
+    if not all_results:
         logger.warning(f"All sources failed for sector '{sector}'. Returning placeholder.")
         return [
             {
-                "title": f"No recent data found for '{sector}' sector",
-                "link": "",
+                "title": f"No recent news found for '{sector}' sector - Analysis based on general market knowledge.",
+                "link": "https://news.google.com",
             }
         ]
 
     # Deduplicate and cap
-    final = _deduplicate(results)[:MAX_RESULTS]
+    final = _deduplicate(all_results)[:MAX_RESULTS]
     logger.info(f"Returning {len(final)} results for sector '{sector}'")
     return final
